@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model servers {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  admin_id      Int
+  created_at    DateTime?       @default(now()) @db.DateTime(0)
+  updated_at    DateTime?       @default(now()) @db.DateTime(0)
+  users         users           @relation(fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "servers_ibfk_1")
+  channel       channel[]
+  servers_users servers_users[]
+
+  @@index([admin_id], map: "admin_id")
+}
+
+model servers_users {
+  server_id Int
+  user_id   Int
+  servers   servers @relation(fields: [server_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "servers_users_ibfk_1")
+  users     users   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "servers_users_ibfk_2")
+
+  @@id([server_id, user_id])
+  @@index([user_id], map: "user_id")
+}
+
+model users {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  email         String          @unique(map: "email") @db.VarChar(100)
+  password      String          @db.VarChar(20)
+  created_at    DateTime?       @default(now()) @db.DateTime(0)
+  updated_at    DateTime?       @default(now()) @db.DateTime(0)
+  servers       servers[]
+  servers_users servers_users[]
+}
+
+model channel {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(100)
+  server_id  Int
+  created_at DateTime?  @default(now()) @db.Timestamp(0)
+  updated_at DateTime?  @default(now()) @db.Timestamp(0)
+  video      Boolean?   @default(false)
+  servers    servers    @relation(fields: [server_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "channel_ibfk_1")
+  messages   messages[]
+
+  @@index([server_id], map: "server_id")
+}
+
+model messages {
+  id         Int       @id @default(autoincrement())
+  content    String    @db.Text
+  channel_id Int
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  updated_at DateTime? @default(now()) @db.Timestamp(0)
+  channel    channel   @relation(fields: [channel_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_ibfk_1")
+
+  @@index([channel_id], map: "channel_id")
+}
